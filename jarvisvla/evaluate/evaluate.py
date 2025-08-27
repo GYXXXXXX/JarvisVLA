@@ -16,10 +16,10 @@ from minestudio.simulator.callbacks import (
     InitInventoryCallback,
     SummonMobsCallback,
     CommandsCallback,
-    TeleportCallback,
 )
-from minestudio.models import CraftWorker,SmeltWorker
 
+from jarvisvla.evaluate.env_helper.craft_agent import CraftWorker
+from jarvisvla.evaluate.env_helper.smelt_agent import SmeltWorker
 from jarvisvla.evaluate import draw_utils
 from jarvisvla.utils import file_utils
 from jarvisvla.evaluate import agent_wrapper
@@ -33,7 +33,6 @@ def evaluate(video_path,checkpoints,environment_config:dict,model_config:dict,de
     config_path = os.path.join("./config",config_path.parent)
     hydra.initialize(config_path=config_path, version_base='1.3')
     cfg = hydra.compose(config_name=config_name)
-    
     # camera_config
     camera_cfg = CameraConfig(**cfg.camera_config)
     record_callback = RecordCallback(record_path=Path(video_path).parent, fps=30,show_actions=False)  
@@ -110,7 +109,7 @@ def evaluate(video_path,checkpoints,environment_config:dict,model_config:dict,de
     if type(base_url)!=type(None):
         agent = agent_wrapper.VLLM_AGENT(checkpoint_path=checkpoints,base_url=base_url,**model_config)
     else:
-        raise Exception
+        raise ValueError("can't find base_url")
         
     # get instruction
     instructions = [item["text"] for item in cfg.task_conf]
@@ -122,7 +121,7 @@ def evaluate(video_path,checkpoints,environment_config:dict,model_config:dict,de
             console.Console().log(action)
         obs, reward, terminated, truncated, info = env.step(action)
 
-        if reward>0:
+        if reward > 0:
             success = (True,i)
             break   
         
@@ -235,7 +234,7 @@ if __name__ == "__main__":
     if args.workers==0:
         environment_config["verbos"] = True
         video_path = f"{args.checkpoints.split('/')[-1]}-{args.env_config.split('/')[-1]}.mp4"
-        evaluate(video_path=video_path,checkpoints = args.checkpoints,environment_config = environment_config,device=args.device,model_config=model_config)
+        evaluate(video_path=video_path,checkpoints = args.checkpoints,environment_config = environment_config,device=args.device,base_url=args.base_url,model_config=model_config)
     elif args.workers==1:
         video_path = f"{args.checkpoints.split('/')[-1]}-{args.env_config.split('/')[-1]}.mp4"
         evaluate(video_path=f"{args.checkpoints.split('/')[-1]}-{args.env_config.split('/')[-1]}.mp4",checkpoints = args.checkpoints,environment_config = environment_config,base_url=args.base_url,model_config=model_config)

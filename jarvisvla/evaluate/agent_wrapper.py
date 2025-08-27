@@ -256,15 +256,14 @@ class VLLM_AGENT:
             print(prompts)
             open_logprobs = True
         
-
-        
         chat_completion = self.client.chat.completions.create(
             messages=messages,
             model=self.model,
             temperature=self.temperature,
             max_tokens=1024,
+            top_p = 0.99,
             logprobs = open_logprobs,
-            extra_body = {"skip_special_tokens":False}
+            extra_body = {"skip_special_tokens":False, "top_k" : -1}
         )
 
         outputs = chat_completion.choices[0].message.content
